@@ -7,6 +7,23 @@ checkEnvVariables()
  */
 const S3_HOSTNAME = process.env.MEDUSA_CLOUD_S3_HOSTNAME
 const S3_PATHNAME = process.env.MEDUSA_CLOUD_S3_PATHNAME
+const MINIO_ENDPOINT =
+  process.env.NEXT_PUBLIC_MINIO_ENDPOINT || process.env.MINIO_PUBLIC_ENDPOINT
+
+const parseHost = (value) => {
+  if (!value) return null
+  const raw = value.startsWith("http://") || value.startsWith("https://")
+    ? value
+    : `https://${value}`
+  try {
+    const url = new URL(raw)
+    return { hostname: url.hostname, port: url.port || undefined }
+  } catch {
+    return null
+  }
+}
+
+const minioHost = parseHost(MINIO_ENDPOINT)
 
 /**
  * @type {import('next').NextConfig}
@@ -48,6 +65,17 @@ const nextConfig = {
               protocol: "https",
               hostname: S3_HOSTNAME,
               pathname: S3_PATHNAME,
+            },
+          ]
+        : []),
+      ...(minioHost
+        ? [
+            {
+              protocol: "https",
+              hostname: minioHost.hostname,
+              ...(minioHost.port
+                ? { port: minioHost.port }
+                : {}),
             },
           ]
         : []),
